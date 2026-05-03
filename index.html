@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Be the Star</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pink:       #E8739A;
+  --pink-light: #F4A7C0;
+  --pink-pale:  #FDE8F0;
+  --pink-glow:  rgba(232,115,154,0.3);
+  --lavender:   #C4A8D8;
+  --lavender-light: #EDE0F5;
+  --white:      #FFFFFF;
+  --bg:         #FDF0F5;
+  --bg2:        #F8E8F2;
+  --text:       #3D2440;
+  --text-mid:   #7A4F6D;
+  --text-dim:   #B08AA0;
+  --box-bg:     rgba(255,255,255,0.92);
+  --shadow:     0 8px 32px rgba(200,100,150,0.15);
+  --shadow-soft:0 4px 16px rgba(200,100,150,0.1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; background:#f0d8e8; overflow:hidden; font-family:'Noto Sans KR', sans-serif; }
+
+/* ── 게임 컨테이너 ── */
+#game {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:1280px; height:720px;
+  overflow:hidden;
+  background:var(--bg);
+}
+
+/* ── 파티클 캔버스 ── */
+#particle-canvas {
+  position:absolute; inset:0;
+  pointer-events:none; z-index:2; opacity:0.7;
+}
+
+/* ── 배경 ── */
+#bg {
+  position:absolute; inset:0;
+  background:linear-gradient(135deg, #fdf0f8 0%, #f5e6f5 50%, #ede0f8 100%);
+  background-size:cover; background-position:center;
+  transition:background 1.2s ease; z-index:0;
+}
+#bg-pattern {
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(232,115,154,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(196,168,216,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.4) 0%, transparent 70%);
+}
+#bg-overlay {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, transparent 40%, rgba(255,240,248,0.3) 100%);
+}
+#pin-light {
+  position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+  width:300px; height:500px;
+  background:linear-gradient(to bottom, rgba(255,200,220,0.25) 0%, transparent 100%);
+  clip-path:polygon(33% 0%, 67% 0%, 100% 100%, 0% 100%);
+  opacity:0; transition:opacity 1.5s; pointer-events:none; z-index:3;
+}
+
+/* ── HUD ── */
+#hud {
+  position:absolute; top:0; left:0; right:0;
+  padding:14px 28px;
+  display:flex; align-items:center; gap:16px;
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(232,115,154,0.15);
+  z-index:20;
+  box-shadow:0 2px 12px rgba(200,100,150,0.08);
+}
+#scene-badge {
+  font-size:13.5px; letter-spacing:3px; color:var(--pink);
+  font-weight:600; text-transform:uppercase;
+  background:var(--pink-pale);
+  padding:4px 12px; border-radius:100px;
+  border:1px solid rgba(232,115,154,0.2);
+}
+#scene-title {
+  font-family:'Cormorant Garamond'; font-style:italic;
+  font-size:21px; color:var(--text-mid); letter-spacing:0.5px;
+}
+#hud-sp { flex:1; }
+.stats { display:flex; gap:18px; }
+.stat { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.stat-label { font-size:12px; color:var(--text-dim); letter-spacing:1.5px; }
+.stat-bar {
+  width:60px; height:5px;
+  background:rgba(232,115,154,0.15);
+  border-radius:100px; overflow:hidden;
+}
+.stat-fill {
+  height:100%;
+  background:linear-gradient(to right, var(--pink-light), var(--pink));
+  border-radius:100px; transition:width 0.6s ease;
+}
+.stat-val { font-size:20px; color:var(--pink); font-weight:700; font-family:'Playfair Display'; }
+
+/* ── 캐릭터 ── */
+#characters {
+  position:absolute; bottom:200px; left:0; right:0;
+  height:440px; display:flex; align-items:flex-end; justify-content:center;
+  pointer-events:none; z-index:5;
+}
+.char-slot {
+  width:300px; height:420px;
+  display:flex; align-items:flex-end; justify-content:center;
+  position:relative;
+  transition:filter 0.5s ease, transform 0.5s ease, opacity 0.5s ease;
+  filter:brightness(0.7) saturate(0.6);
+  opacity:0;
+}
+.char-slot.vis { opacity:1; }
+.char-slot.act {
+  filter:brightness(1) saturate(1.05);
+  transform:scale(1.03) translateY(-6px);
+}
+.char-img { width:100%; height:100%; object-fit:contain; object-position:bottom; display:none; }
+.char-svg-wrap { width:160px; height:380px; display:flex; align-items:flex-end; justify-content:center; }
+.char-svg-wrap svg { width:100%; height:100%; }
+.char-glow {
+  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+  width:220px; height:180px;
+  background:radial-gradient(ellipse, rgba(232,115,154,0.2) 0%, transparent 70%);
+  opacity:0; transition:opacity 0.5s; pointer-events:none;
+}
+.char-slot.act .char-glow { opacity:1; }
+.char-name {
+  position:absolute; bottom:-2px; width:100%;
+  text-align:center; font-size:13.5px; letter-spacing:2px;
+  color:var(--pink); opacity:0; transition:opacity 0.3s;
+  font-weight:600;
+}
+.char-slot.act .char-name { opacity:1; }
+
+/* ── 대사창 ── */
+#dialogue-box {
+  position:absolute; bottom:0; left:0; right:0;
+  height:200px;
+  background:rgba(255,255,255,0.9);
+  backdrop-filter:blur(20px);
+  border-top:1.5px solid rgba(232,115,154,0.2);
+  padding:0 100px 24px 100px;
+  display:flex; flex-direction:column; justify-content:center;
+  z-index:20; cursor:pointer;
+  box-shadow:0 -4px 24px rgba(200,100,150,0.08);
+}
+#dialogue-box::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1.5px;
+  background:linear-gradient(to right, transparent, var(--pink-light), var(--lavender), var(--pink-light), transparent);
+}
+/* 코너 하트 장식 */
+#dialogue-box::after {
+  content:'♡'; position:absolute; top:-11px; right:108px;
+  font-size:21px; color:var(--pink-light);
+}
+
+/* 네임플레이트 — pill 형태 */
+#speaker-plate {
+  position:absolute; top:-20px; left:100px;
+  padding:5px 20px;
+  background:linear-gradient(135deg, var(--pink) 0%, var(--pink-light) 100%);
+  border-radius:100px;
+  box-shadow:0 4px 12px var(--pink-glow);
+  opacity:0; transition:opacity 0.25s;
+  display:flex; align-items:center; gap:6px;
+}
+#speaker-plate.show { opacity:1; }
+#speaker-plate::before {
+  content:'✦'; font-size:12px; color:rgba(255,255,255,0.7);
+}
+#speaker-name { font-size:18px; font-weight:600; color:#fff; letter-spacing:1px; }
+
+/* 대사 텍스트 */
+#dialogue-text {
+  font-size:25.5px; line-height:1.9; color:var(--text);
+  font-weight:300; letter-spacing:0.2px; min-height:60px;
+}
+#dialogue-text.narr {
+  color:var(--text-mid);
+  font-family:'Cormorant Garamond'; font-style:italic;
+  font-size:22.5px; letter-spacing:0.3px;
+}
+#dialogue-text.sys {
+  color:var(--pink); font-weight:600;
+  text-align:center; font-size:21px; letter-spacing:3px;
+}
+
+/* NEXT 버튼 */
+#next-btn {
+  position:absolute; bottom:18px; right:36px;
+  display:flex; align-items:center; gap:6px;
+  color:var(--pink-light); font-size:15px; letter-spacing:2px;
+  font-weight:600;
+  animation:nextBlink 1.8s ease-in-out infinite;
+  pointer-events:none;
+}
+#next-btn::before { content:'♡'; font-size:18px; }
+#next-btn.hidden { opacity:0; }
+@keyframes nextBlink { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+/* ── 선택지 — 우측 대사창 위 ── */
+#choices-panel {
+  position:absolute; bottom:200px; right:0;
+  width:40%;
+  display:flex; flex-direction:column;
+  align-items:flex-end; gap:8px;
+  padding:12px 14px 12px 0;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.3s; z-index:25;
+}
+#choices-panel.show { opacity:1; pointer-events:all; }
+#choice-q {
+  font-size:15px; color:var(--text-dim);
+  letter-spacing:1px; margin-bottom:2px;
+  text-align:right;
+  font-family:'Cormorant Garamond'; font-style:italic;
+}
+.choice-btn {
+  width:94%;
+  padding:13px 18px;
+  background:rgba(255,255,255,0.92);
+  border:1.5px solid rgba(232,115,154,0.2);
+  border-radius:16px;
+  display:flex; align-items:center; gap:12px;
+  cursor:pointer;
+  transition:all 0.2s ease;
+  opacity:0; transform:translateX(16px);
+  animation:choiceSlide 0.3s ease forwards;
+  box-shadow:0 4px 16px rgba(200,100,150,0.08);
+  backdrop-filter:blur(10px);
+}
+.choice-btn:nth-child(2){animation-delay:0.05s}
+.choice-btn:nth-child(3){animation-delay:0.1s}
+.choice-btn:nth-child(4){animation-delay:0.15s}
+@keyframes choiceSlide { to{opacity:1;transform:translateX(0)} }
+.choice-btn:hover {
+  background:var(--pink-pale);
+  border-color:var(--pink-light);
+  transform:translateX(-3px);
+  box-shadow:0 6px 20px var(--pink-glow);
+}
+.choice-key {
+  width:26px; height:26px;
+  background:linear-gradient(135deg, var(--pink) 0%, var(--pink-light) 100%);
+  border-radius:100px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16.5px; font-weight:700; color:#fff;
+  flex-shrink:0;
+  box-shadow:0 2px 8px var(--pink-glow);
+}
+.choice-text { font-size:19.5px; color:var(--text); font-weight:400; line-height:1.5; flex:1; }
+
+/* ── 토스트 ── */
+#toast {
+  position:absolute; top:50px; left:50%;
+  transform:translateX(-50%) translateY(-70px);
+  background:linear-gradient(135deg, var(--pink) 0%, var(--lavender) 100%);
+  color:#fff; padding:8px 24px;
+  border-radius:100px;
+  font-size:16.5px; font-weight:600; letter-spacing:2px;
+  z-index:40; pointer-events:none;
+  transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s;
+  opacity:0; white-space:nowrap;
+  box-shadow:0 4px 20px var(--pink-glow);
+}
+#toast::before { content:'💾  '; }
+#toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+/* ── 팝업 ── */
+#popup-overlay {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(253,240,248,0.7);
+  backdrop-filter:blur(12px);
+  opacity:0; pointer-events:none;
+  transition:opacity 0.3s; z-index:35;
+}
+#popup-overlay.show { opacity:1; pointer-events:all; }
+#popup-content {
+  max-width:680px;
+  background:rgba(255,255,255,0.95);
+  border:1.5px solid rgba(232,115,154,0.2);
+  border-radius:24px;
+  padding:32px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  box-shadow:0 20px 60px rgba(200,100,150,0.15);
+}
+#popup-content img { max-width:100%; max-height:380px; object-fit:contain; border-radius:12px; }
+#popup-text { font-size:22.5px; color:var(--text); line-height:1.9; text-align:center; }
+#popup-close { font-size:15px; color:var(--text-dim); letter-spacing:2px; }
+
+/* ── 타이틀 ── */
+#title-screen {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  z-index:100; transition:opacity 0.8s;
+  overflow:hidden;
+  background:url('title_bg.png') center/cover no-repeat;
+}
+#title-screen.out { opacity:0; pointer-events:none; }
+
+/* 타이틀 배경 원들 */
+.t-ring {
+  position:absolute; border-radius:50%;
+  border:1px solid rgba(232,115,154,0.12);
+  animation:tRingPulse 5s ease-in-out infinite;
+}
+.t-ring:nth-child(1){ width:320px; height:320px; animation-delay:0s; }
+.t-ring:nth-child(2){ width:520px; height:520px; animation-delay:0.6s; }
+.t-ring:nth-child(3){ width:720px; height:720px; animation-delay:1.2s; border-color:rgba(196,168,216,0.1); }
+.t-ring:nth-child(4){ width:920px; height:920px; animation-delay:1.8s; border-color:rgba(196,168,216,0.07); }
+@keyframes tRingPulse { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.015)} }
+
+/* 타이틀 글로우 */
+#title-glow {
+  position:absolute; width:400px; height:400px;
+  border-radius:50%;
+  background:radial-gradient(ellipse, rgba(232,115,154,0.15) 0%, transparent 70%);
+  animation:glowPulse 3s ease-in-out infinite;
+}
+@keyframes glowPulse { 0%,100%{transform:scale(1);opacity:0.6} 50%{transform:scale(1.1);opacity:1} }
+
+#title-logo {
+  font-family:'Playfair Display'; font-size:96px;
+  color:var(--text); letter-spacing:6px; line-height:0.95;
+  text-align:center; position:relative; z-index:2;
+  text-shadow:0 2px 20px rgba(232,115,154,0.2);
+}
+#title-logo .accent {
+  background:linear-gradient(135deg, var(--pink) 0%, var(--lavender) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+#title-star {
+  font-size:24px; color:var(--pink-light);
+  text-align:center; letter-spacing:16px;
+  margin-top:8px; position:relative; z-index:2;
+  animation:starTwinkle 2s ease-in-out infinite;
+}
+@keyframes starTwinkle { 0%,100%{opacity:0.5} 50%{opacity:1} }
+#title-sub {
+  font-family:'Noto Sans KR'; font-style:normal;
+  font-size:15px; color:rgba(255,255,255,0.7); letter-spacing:6px;
+  margin-top:0; margin-bottom:48px; position:relative; z-index:2;
+  text-shadow:0 2px 12px rgba(200,150,220,0.5);
+}
+#start-btn {
+  padding:16px 60px;
+  background:rgba(255,255,255,0.2);
+  border:1.5px solid rgba(255,255,255,0.6);
+  border-radius:100px;
+  color:#fff; font-size:16px; font-weight:600;
+  letter-spacing:5px; cursor:pointer;
+  transition:all 0.3s ease; position:relative; z-index:2;
+  box-shadow:0 8px 32px rgba(200,150,220,0.3);
+  backdrop-filter:blur(8px);
+  text-shadow:0 1px 8px rgba(200,150,220,0.5);
+}
+#start-btn:hover {
+  background:rgba(255,255,255,0.35);
+  transform:translateY(-2px);
+  box-shadow:0 12px 40px rgba(200,150,220,0.5);
+}
+#start-btn:active { transform:translateY(0); }
+#title-ver { position:absolute; bottom:18px; right:24px; font-size:13.5px; color:rgba(255,255,255,0.5); letter-spacing:2px; }
+
+/* ── 엔딩 ── */
+#ending-screen {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px;
+  background:rgba(253,240,248,0.97);
+  opacity:0; pointer-events:none;
+  transition:opacity 0.8s; z-index:50;
+}
+#ending-screen.show { opacity:1; pointer-events:all; }
+#ending-title {
+  font-family:'Playfair Display'; font-size:72px;
+  background:linear-gradient(135deg, var(--pink) 0%, var(--lavender) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; letter-spacing:4px;
+}
+#ending-desc {
+  font-family:'Cormorant Garamond'; font-style:italic;
+  font-size:24px; color:var(--text-mid); text-align:center; line-height:2.2;
+}
+#ending-stats { display:flex; gap:40px; margin:16px 0; }
+.e-stat { text-align:center; }
+.e-stat-name { font-size:13.5px; color:rgba(255,255,255,0.5); letter-spacing:2px; }
+.e-stat-val {
+  font-family:'Playfair Display'; font-size:66px;
+  background:linear-gradient(135deg, var(--pink) 0%, var(--lavender) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+#restart-btn {
+  padding:12px 40px; border:1.5px solid rgba(232,115,154,0.3);
+  background:transparent; border-radius:100px;
+  color:var(--text-dim); font-size:18px;
+  letter-spacing:3px; cursor:pointer; transition:all 0.2s;
+}
+#restart-btn:hover {
+  border-color:var(--pink); color:var(--pink);
+  background:var(--pink-pale);
+}
+</style>
+</head>
+<body>
+<div id="game">
+
+  <!-- 타이틀 -->
+  <div id="title-screen">
+
+    <canvas id="title-canvas" style="position:absolute;inset:0;pointer-events:none;width:100%;height:100%;"></canvas>
+    <div id="title-sub">너의 빛이 되는 순간</div>
+    <button id="start-btn" onclick="startGame()">▶ START DEMO</button>
+    <div id="title-ver">SCENE 01–03 · VERTICAL SLICE</div>
+  </div>
+
+  <!-- 배경 -->
+  <div id="bg"></div>
+  <div id="bg-pattern"></div>
+  <canvas id="particle-canvas"></canvas>
+  <div id="pin-light"></div>
+  <div id="bg-overlay"></div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="scene-badge">SCENE 01</div>
+    <div id="scene-title"></div>
+    <div id="hud-sp"></div>
+    <div class="stats">
+      <div class="stat"><div class="stat-label">노력</div><div class="stat-bar"><div class="stat-fill" id="f-effort" style="width:20%"></div></div><div class="stat-val" id="v-effort">2</div></div>
+      <div class="stat"><div class="stat-label">실력</div><div class="stat-bar"><div class="stat-fill" id="f-skill" style="width:20%"></div></div><div class="stat-val" id="v-skill">2</div></div>
+      <div class="stat"><div class="stat-label">인기</div><div class="stat-bar"><div class="stat-fill" id="f-fame" style="width:10%"></div></div><div class="stat-val" id="v-fame">1</div></div>
+      <div class="stat"><div class="stat-label">방송</div><div class="stat-bar"><div class="stat-fill" id="f-broadcast" style="width:20%"></div></div><div class="stat-val" id="v-broadcast">2</div></div>
+    </div>
+  </div>
+
+  <!-- 캐릭터 -->
+  <div id="characters">
+    <div class="char-slot" id="slot-left">
+      <div class="char-glow"></div>
+      <img class="char-img" id="img-left" src="">
+      <div class="char-svg-wrap" id="svg-left"></div>
+      <div class="char-name" id="name-left"></div>
+    </div>
+    <div class="char-slot" id="slot-center">
+      <div class="char-glow"></div>
+      <img class="char-img" id="img-center" src="">
+      <div class="char-svg-wrap" id="svg-center"></div>
+      <div class="char-name" id="name-center"></div>
+    </div>
+    <div class="char-slot" id="slot-right">
+      <div class="char-glow"></div>
+      <img class="char-img" id="img-right" src="">
+      <div class="char-svg-wrap" id="svg-right"></div>
+      <div class="char-name" id="name-right"></div>
+    </div>
+  </div>
+
+  <!-- 대사창 -->
+  <div id="dialogue-box" onclick="advance()">
+    <div id="speaker-plate"><span id="speaker-name"></span></div>
+    <div id="dialogue-text"></div>
+    <div id="next-btn">NEXT</div>
+  </div>
+
+  <!-- 선택지 -->
+  <div id="choices-panel"><div id="choice-q"></div></div>
+
+  <!-- 토스트 -->
+  <div id="toast">CHECKPOINT 저장됨</div>
+
+  <!-- 팝업 -->
+  <div id="popup-overlay" onclick="closePopup()">
+    <div id="popup-content">
+      <img id="popup-img" src="" style="display:none">
+      <div id="popup-text"></div>
+      <div id="popup-close">♡ 탭하여 계속</div>
+    </div>
+  </div>
+
+  <!-- 엔딩 -->
+  <div id="ending-screen">
+    <div id="ending-title">DEMO COMPLETE</div>
+    <div id="ending-desc"></div>
+    <div id="ending-stats">
+      <div class="e-stat"><div class="e-stat-name">노력</div><div class="e-stat-val" id="e-effort">—</div></div>
+      <div class="e-stat"><div class="e-stat-name">실력</div><div class="e-stat-val" id="e-skill">—</div></div>
+      <div class="e-stat"><div class="e-stat-name">인기</div><div class="e-stat-val" id="e-fame">—</div></div>
+      <div class="e-stat"><div class="e-stat-name">방송</div><div class="e-stat-val" id="e-broadcast">—</div></div>
+    </div>
+    <button id="restart-btn" onclick="restartGame()">↺ RESTART</button>
+  </div>
+
+</div>
+<script>
+// ══ 파티클 ══
+function initParticles(canvasId, count, colors, w, h) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = w || 1280; canvas.height = h || 720;
+  const pts = Array.from({length:count}, () => ({
+    x: Math.random()*(w||1280), y: Math.random()*(h||720),
+    size: Math.random()*2+0.5,
+    opacity: Math.random(),
+    speed: Math.random()*0.4+0.1,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    phase: Math.random()*Math.PI*2,
+    shape: Math.random()>0.6 ? 'heart' : 'circle',
+  }));
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pts.forEach(p=>{
+      p.phase+=p.speed*0.02; p.opacity=0.2+Math.sin(p.phase)*0.5;
+      p.y-=p.speed*0.15; if(p.y<0){p.y=canvas.height;p.x=Math.random()*canvas.width;}
+      ctx.save(); ctx.globalAlpha=Math.max(0,p.opacity);
+      ctx.fillStyle=p.color;
+      if(p.shape==='heart'&&p.size>1.2){
+        const s=p.size*0.8;
+        ctx.beginPath();
+        ctx.moveTo(p.x,p.y+s*0.3);
+        ctx.bezierCurveTo(p.x,p.y,p.x-s,p.y,p.x-s,p.y-s*0.5);
+        ctx.bezierCurveTo(p.x-s,p.y-s*1.2,p.x,p.y-s*1.2,p.x,p.y-s*0.5);
+        ctx.bezierCurveTo(p.x,p.y-s*1.2,p.x+s,p.y-s*1.2,p.x+s,p.y-s*0.5);
+        ctx.bezierCurveTo(p.x+s,p.y,p.x,p.y,p.x,p.y+s*0.3);
+        ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+const PC=['#F4A7C0','#E8739A','#C4A8D8','#FFDDE8','#ffffff'];
+initParticles('particle-canvas',60,PC);
+initParticles('title-canvas',40,['rgba(255,255,255,0.8)','rgba(255,200,220,0.8)'],1280,720);
+
+// ══ 라인아트 SVG 실루엣 (파스텔 버전) ══
+const SILS = {
+  default:`<svg viewBox="0 0 160 380" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="pg1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#E8739A" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="#C4A8D8" stop-opacity="0.3"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="80" cy="44" rx="26" ry="30" fill="none" stroke="url(#pg1)" stroke-width="1.5"/>
+    <path d="M54,38 Q58,8 80,6 Q102,8 106,38" fill="none" stroke="url(#pg1)" stroke-width="1.5"/>
+    <path d="M54,46 Q50,62 52,74" fill="none" stroke="url(#pg1)" stroke-width="1"/>
+    <path d="M106,46 Q110,62 108,74" fill="none" stroke="url(#pg1)" stroke-width="1"/>
+    <line x1="76" y1="73" x2="75" y2="87" stroke="url(#pg1)" stroke-width="1.2"/>
+    <line x1="84" y1="73" x2="85" y2="87" stroke="url(#pg1)" stroke-width="1.2"/>
+    <path d="M75,87 Q56,90 46,102 L44,172 Q44,180 80,180 Q116,180 116,172 L114,102 Q104,90 85,87" fill="none" stroke="url(#pg1)" stroke-width="1.5"/>
+    <path d="M46,102 Q34,116 30,142 Q28,158 34,170" fill="none" stroke="url(#pg1)" stroke-width="1.2"/>
+    <path d="M114,102 Q126,116 130,142 Q132,158 126,170" fill="none" stroke="url(#pg1)" stroke-width="1.2"/>
+    <path d="M44,172 Q40,205 36,248 Q32,278 38,298 L80,303 L122,298 Q128,278 124,248 Q120,205 116,172" fill="none" stroke="url(#pg1)" stroke-width="1.5"/>
+    <path d="M48,210 Q58,228 52,248" fill="none" stroke="url(#pg1)" stroke-width="0.8" opacity="0.5"/>
+    <path d="M80,215 L80,252" fill="none" stroke="url(#pg1)" stroke-width="0.8" opacity="0.5"/>
+    <path d="M112,210 Q102,228 108,248" fill="none" stroke="url(#pg1)" stroke-width="0.8" opacity="0.5"/>
+    <line x1="58" y1="300" x2="54" y2="370" stroke="url(#pg1)" stroke-width="1.5"/>
+    <line x1="102" y1="300" x2="106" y2="370" stroke="url(#pg1)" stroke-width="1.5"/>
+    <path d="M48,370 Q44,376 40,374 Q36,376 42,378 L58,378 L58,370" fill="none" stroke="url(#pg1)" stroke-width="1.2"/>
+    <path d="M112,370 Q116,376 120,374 Q124,376 118,378 L102,378 L102,370" fill="none" stroke="url(#pg1)" stroke-width="1.2"/>
+    <text x="66" y="132" fill="#E8739A" font-size="8" opacity="0.5">♡</text>
+    <text x="90" y="118" fill="#C4A8D8" font-size="6" opacity="0.5">✦</text>
+  </svg>`,
+
+  SEOA:`<svg viewBox="0 0 160 380" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="pg2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#C4A8D8" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#E8739A" stop-opacity="0.4"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="80" cy="42" rx="24" ry="28" fill="none" stroke="url(#pg2)" stroke-width="1.5"/>
+    <path d="M56,38 L50,108" fill="none" stroke="url(#pg2)" stroke-width="1.2"/>
+    <path d="M104,38 L110,108" fill="none" stroke="url(#pg2)" stroke-width="1.2"/>
+    <path d="M58,10 Q80,2 102,10 L106,38" fill="none" stroke="url(#pg2)" stroke-width="1.5"/>
+    <line x1="76" y1="69" x2="75" y2="84" stroke="url(#pg2)" stroke-width="1.2"/>
+    <line x1="84" y1="69" x2="85" y2="84" stroke="url(#pg2)" stroke-width="1.2"/>
+    <path d="M75,84 Q60,87 52,98 L50,168 Q50,176 80,176 Q110,176 110,168 L108,98 Q100,87 85,84" fill="none" stroke="url(#pg2)" stroke-width="1.5"/>
+    <path d="M52,98 Q40,112 38,134 L50,140 Q58,124 68,118" fill="none" stroke="url(#pg2)" stroke-width="1.2"/>
+    <path d="M108,98 Q120,112 122,134 L110,140 Q102,124 92,118" fill="none" stroke="url(#pg2)" stroke-width="1.2"/>
+    <path d="M50,140 Q80,150 110,140" fill="none" stroke="url(#pg2)" stroke-width="1"/>
+    <path d="M50,168 L46,298 L68,300 L80,245 L92,300 L114,298 L110,168" fill="none" stroke="url(#pg2)" stroke-width="1.5"/>
+    <path d="M46,298 L44,310 L36,312 L36,316 L52,316 L52,300" fill="none" stroke="url(#pg2)" stroke-width="1.2"/>
+    <path d="M114,298 L116,310 L124,312 L124,316 L108,316 L108,300" fill="none" stroke="url(#pg2)" stroke-width="1.2"/>
+    <text x="74" y="52" fill="#C4A8D8" font-size="7" opacity="0.6">✦</text>
+  </svg>`,
+
+  HARIN:`<svg viewBox="0 0 160 380" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="pg3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#F4A7C0" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#E8739A" stop-opacity="0.4"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="80" cy="44" rx="28" ry="30" fill="none" stroke="url(#pg3)" stroke-width="1.5"/>
+    <path d="M52,44 Q46,68 50,78 Q54,84 58,80" fill="none" stroke="url(#pg3)" stroke-width="1.5"/>
+    <path d="M108,44 Q114,68 110,78 Q106,84 102,80" fill="none" stroke="url(#pg3)" stroke-width="1.5"/>
+    <path d="M54,20 Q80,8 106,20" fill="none" stroke="url(#pg3)" stroke-width="1.5"/>
+    <line x1="76" y1="73" x2="75" y2="87" stroke="url(#pg3)" stroke-width="1.2"/>
+    <line x1="84" y1="73" x2="85" y2="87" stroke="url(#pg3)" stroke-width="1.2"/>
+    <path d="M75,87 Q56,90 46,104 L44,170 Q44,180 80,180 Q116,180 116,170 L114,104 Q104,90 85,87" fill="none" stroke="url(#pg3)" stroke-width="1.5"/>
+    <path d="M46,104 Q30,110 24,128 Q20,144 28,158" fill="none" stroke="url(#pg3)" stroke-width="1.2"/>
+    <path d="M114,104 Q130,114 132,134 Q134,150 126,162" fill="none" stroke="url(#pg3)" stroke-width="1.2"/>
+    <path d="M44,170 Q36,202 32,238 Q62,252 80,244 Q98,252 128,238 Q124,202 116,170" fill="none" stroke="url(#pg3)" stroke-width="1.5"/>
+    <line x1="60" y1="242" x2="56" y2="355" stroke="url(#pg3)" stroke-width="1.5"/>
+    <line x1="100" y1="242" x2="104" y2="355" stroke="url(#pg3)" stroke-width="1.5"/>
+    <path d="M50,355 Q46,362 42,360 Q38,364 44,366 L60,366 L60,355" fill="none" stroke="url(#pg3)" stroke-width="1.2"/>
+    <path d="M110,355 Q114,362 118,360 Q122,364 116,366 L100,366 L100,355" fill="none" stroke="url(#pg3)" stroke-width="1.2"/>
+    <text x="28" y="148" fill="#F4A7C0" font-size="9" opacity="0.7">♡</text>
+    <text x="122" y="140" fill="#E8739A" font-size="7" opacity="0.6">♡</text>
+    <text x="68" y="208" fill="#F4A7C0" font-size="6" opacity="0.5">✦</text>
+  </svg>`,
+
+  YUNA:`<svg viewBox="0 0 160 380" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="pg4" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#C4A8D8" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="#E8C4D8" stop-opacity="0.3"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="78" cy="46" rx="25" ry="28" fill="none" stroke="url(#pg4)" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <path d="M53,42 Q46,72 44,102" fill="none" stroke="url(#pg4)" stroke-width="1.2"/>
+    <path d="M103,42 Q108,67 106,92" fill="none" stroke="url(#pg4)" stroke-width="1.2"/>
+    <path d="M55,18 Q78,8 103,18" fill="none" stroke="url(#pg4)" stroke-width="1.5"/>
+    <line x1="74" y1="73" x2="73" y2="87" stroke="url(#pg4)" stroke-width="1.2"/>
+    <line x1="82" y1="73" x2="83" y2="87" stroke="url(#pg4)" stroke-width="1.2"/>
+    <path d="M73,87 Q58,90 50,102 L48,172 Q48,180 78,180 Q112,180 112,172 L110,102 Q102,90 83,87" fill="none" stroke="url(#pg4)" stroke-width="1.5"/>
+    <path d="M50,102 Q40,116 38,137 Q40,152 50,156" fill="none" stroke="url(#pg4)" stroke-width="1.2"/>
+    <path d="M110,102 Q120,116 122,137 Q120,152 110,156" fill="none" stroke="url(#pg4)" stroke-width="1.2"/>
+    <path d="M50,156 Q65,167 78,164 Q91,167 110,156" fill="none" stroke="url(#pg4)" stroke-width="1"/>
+    <path d="M48,172 Q44,215 42,265 Q50,290 78,293 Q108,290 118,265 Q116,215 112,172" fill="none" stroke="url(#pg4)" stroke-width="1.5" stroke-dasharray="5,2"/>
+    <path d="M46,215 Q78,228 114,215" fill="none" stroke="url(#pg4)" stroke-width="0.8" opacity="0.5"/>
+    <path d="M44,245 Q78,258 116,245" fill="none" stroke="url(#pg4)" stroke-width="0.8" opacity="0.5"/>
+    <line x1="62" y1="290" x2="60" y2="360" stroke="url(#pg4)" stroke-width="1.5"/>
+    <line x1="96" y1="290" x2="98" y2="360" stroke="url(#pg4)" stroke-width="1.5"/>
+    <path d="M54,360 L46,362 L46,366 L62,366 L62,360" fill="none" stroke="url(#pg4)" stroke-width="1.2"/>
+    <path d="M104,360 L112,362 L112,366 L96,366 L96,360" fill="none" stroke="url(#pg4)" stroke-width="1.2"/>
+    <text x="108" y="102" fill="#C4A8D8" font-size="7" opacity="0.5">✦</text>
+  </svg>`,
+};
+
+// ══ 스탯 ══
+const S={effort:2,skill:2,fame:1,broadcast:2};
+function applyFx(str){
+  if(!str)return;
+  str.split(',').forEach(e=>{
+    e=e.trim();const m=e.match(/^(\w+)([+-])(\d+)$/);
+    if(m){const[,stat,op,val]=m;if(S[stat]!==undefined)S[stat]=Math.max(0,Math.min(10,S[stat]+(op==='+'?1:-1)*parseInt(val)));}
+  });
+  refreshHUD();
+}
+function refreshHUD(){
+  ['effort','skill','fame','broadcast'].forEach(k=>{
+    document.getElementById('f-'+k).style.width=(S[k]*10)+'%';
+    document.getElementById('v-'+k).textContent=S[k];
+  });
+}
+
+// ══ 씬/캐릭터 설정 ══
+const SPEAKERS={PLAYER:'나 (No.32)',STAFF:'스태프',SEOA:'윤서아 (No.15)',HARIN:'강하린 (No.8)',YUNA:'이유나 (No.92)',PD:'김PD'};
+// 캐릭터 표정별 이미지 매핑
+// 파일명 규칙: characters/char_{id}_{expression}.png
+const CHAR_IMG = {
+  PLAYER: {
+    default:    'characters/char_player_default.png',
+    nervous:    'characters/char_player_nervous.png',
+    surprised:  'characters/char_player_surprised.png',
+    angry:      'characters/char_player_angry.png',
+    neutral:    'characters/char_player_neutral.png',
+    confused:   'characters/char_player_confused.png',
+    determined: 'characters/char_player_determined.png',
+    sincere:    'characters/char_player_sincere.png',
+    confident:  'characters/char_player_confident.png',
+  },
+  SEOA: {
+    default: 'characters/char_seoa_default.png',
+    cold:    'characters/char_seoa_cold.png',
+    neutral: 'characters/char_seoa_neutral.png',
+  },
+  HARIN: {
+    default: 'characters/char_harin_default.png',
+    happy:   'characters/char_harin_happy.png',
+    neutral: 'characters/char_harin_neutral.png',
+  },
+  YUNA: {
+    default: 'characters/char_yuna_default.png',
+    nervous: 'characters/char_yuna_nervous.png',
+    neutral: 'characters/char_yuna_neutral.png',
+  },
+  PD: {
+    default:   'characters/char_pd_default.png',
+    neutral:   'characters/char_pd_neutral.png',
+    interested:'characters/char_pd_interested.png',
+  },
+  STAFF: {
+    default: 'characters/char_staff_default.png',
+    neutral: 'characters/char_staff_neutral.png',
+  },
+};
+
+// 표정 이미지 경로 가져오기 (없으면 default로 폴백)
+function getCharImg(spId, expr) {
+  const charMap = CHAR_IMG[spId];
+  if (!charMap) return null;
+  return charMap[expr] || charMap['default'] || null;
+}
+const CHAR_SIL={SEOA:'SEOA',HARIN:'HARIN',YUNA:'YUNA'};
+
+const SCENES={
+  S01:{badge:'SCENE 01',title:'훈련동 입소',bg:'linear-gradient(135deg,#fff0f8 0%,#f8e6f5 50%,#ede0f8 100%)',pin:false,first:'10100'},
+  S02:{badge:'SCENE 02',title:'첫 만남',bg:'linear-gradient(135deg,#f5f0ff 0%,#ede6f8 50%,#f8e6ee 100%)',pin:false,first:'20100'},
+  S03:{badge:'SCENE 03',title:'블라인드 인터뷰',bg:'linear-gradient(135deg,#f0e6f8 0%,#e8d8f0 50%,#d8c8e8 100%)',pin:true,first:'30100'},
+};
+
+// ══ 이벤트 데이터 ══
+const EV={
+  '10100':{t:'bgm',bgm:'bgm_intro',next:'10200'},
+  '10200':{t:'narr',tx:'와... 진짜 왔다. TV에서만 보던 그 로고... 나 진짜 여기 있는 거 맞아?',next:'10300'},
+  '10300':{t:'narr',sp:'PLAYER',slot:'center',move:'start',expr:'nervous',tx:'나 진짜 여기 왔구나...',next:'10400'},
+  '10400':{t:'narr',sp:'PLAYER',tx:'근데 저 사람들. 다 경험한 사람들인가? 분위기가 왜 무서워...',next:'10500'},
+  '10500':{t:'line',sp:'STAFF',slot:'right',move:'start',expr:'default',tx:'32번 연습생. 이쪽으로 오세요.',next:'10600'},
+  '10600':{t:'line',sp:'STAFF',tx:'핸드폰이랑 외부 통신기기는 전부 반납하셔야 합니다. 규정 아시죠?',next:'10700'},
+  '10700':{t:'narr',tx:'(떨리는 손으로 핸드폰을 꺼낸다)',next:'10800'},
+  '10800':{t:'choice',tx:'어떻게 할까?',cid:'C001'},
+  'C001_1':{t:'choice_option',cid:'C001',tx:'잠깐 망설인다',next:'10811',fx:'personality=hesitant'},
+  'C001_2':{t:'choice_option',cid:'C001',tx:'바로 내려놓는다',next:'10821',fx:'personality=decisive'},
+  'C001_3':{t:'choice_option',cid:'C001',tx:'마지막으로 화면을 본다',next:'10831',fx:'personality=emotional'},
+  '10811':{t:'narr',tx:'(잠깐 망설이다 핸드폰을 바구니에 내려놓는다)',next:'10900'},
+  '10821':{t:'narr',tx:'(핸드폰을 바구니에 바로 내려놓는다)',next:'10900'},
+  '10831':{t:'narr',tx:'(엄마한테 문자가 와 있다.)',next:'10832'},
+  '10832':{t:'narr',tx:'(떨리는 손으로 핸드폰을 바구니에 내려놓는다)',next:'10900'},
+  '10900':{t:'narr',sp:'PLAYER',tx:'아... 내 핸드폰. 이제 진짜 바깥세상이랑은 안녕이네.',next:'11000'},
+  '11000':{t:'narr',sp:'PLAYER',tx:'갑자기 심장이 막 요동치기 시작했다.',next:'11100'},
+  '11100':{t:'line',sp:'STAFF',tx:'32번. 오늘부터는 이름 대신 이 번호로 불릴 거예요.',next:'11200'},
+  '11200':{t:'line',sp:'STAFF',tx:'잃어버린 숙소 출입도 안 되니까 목에 꼭 걸고 다니세요.',next:'11300'},
+  '11300':{t:'narr',tx:'(ID 카드를 건넨다)',next:'11400'},
+  '11400':{t:'sys',tx:'[ No.32 ID 카드 획득 ]',next:'11500'},
+  '11500':{t:'narr',sp:'PLAYER',tx:'32번... 이게 이곳에서의 내 새 이름인가?',next:'11600'},
+  '11600':{t:'narr',sp:'PLAYER',tx:'그래도 나. 여기까지 오느라 고생 많았잖아.',next:'11700'},
+  '11700':{t:'narr',sp:'PLAYER',tx:'기죽지 말자!',next:'12000'},
+  '12000':{t:'checkpoint',cpNum:1,next:'S02'},
+
+  '20100':{t:'bgm',bgm:'bgm_corridor',next:'20200'},
+  '20200':{t:'narr',tx:'숙소로 향하는 긴 복도. 사방이 거울로 된 벽면.',next:'20300'},
+  '20300':{t:'narr',sp:'PLAYER',slot:'center',move:'start',expr:'neutral',tx:'복도 왤케 길어... 다들 눈빛들이 장난 아니다.',next:'20400'},
+  '20400':{t:'narr',sp:'PLAYER',tx:'꼭 잡아먹을 것처럼 쳐다보는 것 같아.',next:'20600'},
+  '20600':{t:'narr',sp:'PLAYER',slot:'left',move:'end',expr:'surprised',tx:'앗 죄송합니...!',next:'20700'},
+  '20700':{t:'narr',tx:'바닥에 떨어진 ID카드를 하이힐이 밟는다. 날카로운 눈매의 윤서아(No.15)가 서 있다.',next:'20800'},
+  '20800':{t:'line',sp:'SEOA',slot:'right',move:'start',expr:'cold',tx:'앞 좀 제대로 보고 다니지? 시작도 하기 전에 발목 나가서 짐 싸고 싶은 게 아니라면.',next:'20900'},
+  '20900':{t:'line',sp:'PLAYER',slot:'center',move:'start',expr:'nervous',tx:'아 그게... 제가 방 번호를 찾느라...',next:'21000'},
+  '21000':{t:'line',sp:'SEOA',expr:'cold',tx:'변명은 무대 위에서나 해. 네 실력이 그만큼 처절하다면 말이야.',next:'21100'},
+  '21100':{t:'char_exit',sp:'SEOA',slot:'right',next:'21200'},
+  '21200':{t:'narr',tx:'바닥에 떨어진 ID카드. 차갑게 빛난다.',next:'21300'},
+  '21300':{t:'narr',sp:'PLAYER',expr:'angry',tx:'와... 재수 없어 진짜.',next:'21400'},
+  '21400':{t:'line',sp:'HARIN',slot:'right',move:'start',expr:'happy',tx:'우와 진짜 까칠하네. 저 언니 성격 장난 아니기로 유명하거든요. 32번님 괜찮아요?',next:'21500'},
+  '21500':{t:'line',sp:'PLAYER',expr:'neutral',tx:'아 네... 괜찮아요. 근데... 저분을 아세요?',next:'21600'},
+  '21600':{t:'line',sp:'HARIN',expr:'happy',tx:'당연하죠! 15번 윤서아. 실력은 진짜 미쳤는데 독기만 남았다는 소문이 자자해요.',next:'21700'},
+  '21700':{t:'line',sp:'HARIN',expr:'happy',tx:'아 제 소개가 늦었네요. 전 8번 강하린! 우리 친하게 지내요 32번님!',next:'21800'},
+  '21800':{t:'char_exit',sp:'HARIN',slot:'right',next:'21900'},
+  '21900':{t:'narr',sp:'PLAYER',slot:'center',move:'start',expr:'neutral',tx:'오 이 언니는 친절하네... 나도 모르게 긴장되네...',next:'22000'},
+  '22000':{t:'narr',tx:'복도 기둥 뒤에서 이유나(No.92)와 눈이 마주친다.',next:'22100'},
+  '22100':{t:'line',sp:'PLAYER',expr:'neutral',tx:'어... 안녕? 너도 혹시 방 찾는 거야?',next:'22200'},
+  '22200':{t:'narr',sp:'YUNA',slot:'right',move:'start',tx:'유나가 소스라치게 놀라며 고개를 푹 숙인다.',next:'22300'},
+  '22300':{t:'line',sp:'YUNA',expr:'nervous',tx:'아... 아뇨 저... 죄송합니다...!',next:'22400'},
+  '22400':{t:'char_exit',sp:'YUNA',slot:'right',next:'22500'},
+  '22500':{t:'line',sp:'PLAYER',expr:'confused',tx:'엥? 저 애는 또 뭐야? 여긴 진짜 특이한 애들 천지네...',next:'22600'},
+  '22600':{t:'checkpoint',cpNum:2,next:'S03'},
+
+  '30100':{t:'bgm',bgm:'bgm_tense',next:'30200'},
+  '30200':{t:'narr',tx:'암전된 작은 방. 정면에 눈부신 핀 조명.',next:'30300'},
+  '30300':{t:'narr',sp:'PLAYER',slot:'center',move:'start',expr:'nervous',tx:'아 이 방 왜 이렇게 깜깜해... 완전 취조실 같은데?',next:'30400'},
+  '30400':{t:'narr',sp:'PLAYER',tx:'조명 때문에 앞도 하나도 안 보이고.',next:'30500'},
+  '30500':{t:'line',sp:'PD',slot:'left',move:'start',expr:'neutral',tx:'자 32번 연습생. 자리에 앉으세요. 여긴 익명 인터뷰 방입니다. 솔직하게 말해도 돼요.',next:'30600'},
+  '30600':{t:'narr',sp:'PLAYER',tx:'(마른침을 삼킨다)',next:'30700'},
+  '30700':{t:'line',sp:'PD',expr:'neutral',tx:"100명의 연습생이 모였습니다. 결국은 다 경쟁자예요. 당신은 여기서 어떤 '캐릭터'로 살아남을 생각입니까?",next:'30800'},
+  '30800':{t:'choice',tx:'어떻게 대답할까?',cid:'C002'},
+  'C002_1':{t:'choice_option',cid:'C002',tx:'실력으로 다 찍어 누를 겁니다.',next:'30811',fx:'skill+3'},
+  'C002_2':{t:'choice_option',cid:'C002',tx:'누구보다 간절하게 성장하는 걸 보여줄게요.',next:'30821',fx:'effort+3'},
+  'C002_3':{t:'choice_option',cid:'C002',tx:'판을 흔드는 사람이 되고 싶어요.',next:'30831',fx:'broadcast+3'},
+  '30811':{t:'line',sp:'PLAYER',expr:'determined',tx:'실력으로 다 찍어 누를 겁니다. 무대 끝나면 다들 제 번호만 검색하게 만들 자신 있으니까요.',next:'30812'},
+  '30812':{t:'line',sp:'PD',expr:'neutral',tx:'...자신감은 있군요.',next:'30900'},
+  '30821':{t:'line',sp:'PLAYER',expr:'sincere',tx:'남들보다 늦게 시작했을지 몰라도 끝까지 남는 건 저일 거예요. 매일 어제보다 나은 저를 증명하겠습니다.',next:'30822'},
+  '30822':{t:'line',sp:'PD',expr:'neutral',tx:'진심이 느껴지네요. 두고 봐야겠지만.',next:'30900'},
+  '30831':{t:'line',sp:'PLAYER',expr:'confident',tx:'단순히 춤만 잘 추는 건 재미없잖아요. 방송이 뭘 원하는지 시청자가 뭘 보고 싶어 하는지 전 알고 있거든요.',next:'30832'},
+  '30832':{t:'line',sp:'PD',expr:'interested',tx:'흥미롭네요. 생각보다 영리한 친구군요.',next:'30900'},
+  '30900':{t:'narr',sp:'PLAYER',tx:'와... 진짜 시작인가 봐.',next:'31000'},
+  '31000':{t:'line',sp:'PLAYER',expr:'determined',tx:'좋아. 가보는 거야!',next:'31100'},
+  '31100':{t:'scene_end',next:'ENDING'},
+};
+
+// ══ 상태 ══
+let curEv=null,pendingNext=null,typing=false,typeTimer=null;
+const charState={left:null,center:null,right:null};
+let popupNext=null,toastTimer=null;
+
+function loadScene(id){
+  const sc=SCENES[id];if(!sc)return;
+  document.getElementById('scene-badge').textContent=sc.badge;
+  document.getElementById('scene-title').textContent=sc.title;
+  document.getElementById('bg').style.background=sc.bg;
+  document.getElementById('pin-light').style.opacity=sc.pin?'1':'0';
+  ['left','center','right'].forEach(hideChar);
+  runEv(sc.first);
+}
+
+function runEv(id){
+  if(!id)return;
+  if(id==='ENDING'){showEnding();return;}
+  if(SCENES[id]){loadScene(id);return;}
+  const ev=EV[id];if(!ev)return;
+  curEv=id;
+  if(ev.slot&&ev.move==='start'&&ev.t!=='char_exit'){
+    if(ev.sp)showChar(ev.slot,ev.sp,ev.expr);
+  }
+  switch(ev.t){
+    case 'char_exit': hideChar(ev.slot);runEv(ev.next);break;
+    case 'bgm': runEv(ev.next);break;
+    case 'narr': setActive(ev.sp?getSlot(ev.sp):null);showText('narr','',ev.tx,ev.next,ev);break;
+    case 'sys': showText('sys','',ev.tx,ev.next,ev);break;
+    case 'line': setActive(getSlot(ev.sp));showText('line',SPEAKERS[ev.sp]||ev.sp,ev.tx,ev.next,ev);break;
+    case 'choice': showChoices(ev.cid,ev.tx);break;
+    case 'checkpoint': showToast(ev.cpNum,ev.next);break;
+    case 'popup': showPopup(ev.popupType,ev.asset,ev.tx,ev.next);break;
+    case 'scene_end': runEv(ev.next);break;
+    default: runEv(ev.next);
+  }
+}
+
+function showText(type,speaker,text,next,ev){
+  pendingNext=next;
+  const plate=document.getElementById('speaker-plate');
+  const textEl=document.getElementById('dialogue-text');
+  const nextEl=document.getElementById('next-btn');
+  if(type==='narr'||type==='sys'){plate.classList.remove('show');textEl.className=type;}
+  else{plate.classList.add('show');document.getElementById('speaker-name').textContent=speaker;textEl.className='';}
+  nextEl.classList.remove('hidden');
+  typeText(textEl,text);
+  if(ev&&ev.slot&&ev.move==='end'&&ev.t!=='char_exit'){
+    setTimeout(()=>{if(ev.sp)showChar(ev.slot,ev.sp,ev.expr);},(text.length*24*0.7));
+  }
+}
+
+function typeText(el,text){
+  typing=true;el.textContent='';let i=0;
+  clearInterval(typeTimer);
+  typeTimer=setInterval(()=>{el.textContent+=text[i++];if(i>=text.length){clearInterval(typeTimer);typing=false;}},24);
+}
+
+function advance(){
+  if(document.getElementById('choices-panel').classList.contains('show'))return;
+  if(document.getElementById('popup-overlay').classList.contains('show'))return;
+  if(document.getElementById('ending-screen').classList.contains('show'))return;
+  if(!document.getElementById('title-screen').classList.contains('out'))return;
+  if(typing){
+    clearInterval(typeTimer);typing=false;
+    const ev=EV[curEv];if(ev&&ev.tx)document.getElementById('dialogue-text').textContent=ev.tx;
+    return;
+  }
+  if(pendingNext){const n=pendingNext;pendingNext=null;runEv(n);}
+}
+
+function showChoices(cid,question){
+  document.getElementById('next-btn').classList.add('hidden');
+  setActive(null);
+  const panel=document.getElementById('choices-panel');
+  while(panel.children.length>1)panel.removeChild(panel.lastChild);
+  document.getElementById('choice-q').textContent=question;
+  const opts=Object.entries(EV).filter(([k,v])=>v.t==='choice_option'&&v.cid===cid);
+  const keys=['A','B','C','D'];
+  opts.forEach(([k,v],i)=>{
+    const btn=document.createElement('div');
+    btn.className='choice-btn';
+    btn.innerHTML=`<div class="choice-key">${keys[i]}</div><div class="choice-text">${v.tx}</div>`;
+    btn.onclick=e=>{e.stopPropagation();applyFx(v.fx);panel.classList.remove('show');document.getElementById('next-btn').classList.remove('hidden');runEv(v.next);};
+    panel.appendChild(btn);
+  });
+  panel.classList.add('show');
+}
+
+function showToast(cpNum,next){
+  const toast=document.getElementById('toast');
+  toast.textContent='CHECKPOINT '+cpNum+' 저장됨';
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{toast.classList.remove('show');setTimeout(()=>runEv(next),400);},1800);
+}
+
+function showPopup(type,asset,text,next){
+  popupNext=next;
+  document.getElementById('next-btn').classList.add('hidden');
+  const imgEl=document.getElementById('popup-img');
+  const textEl=document.getElementById('popup-text');
+  if(type==='image'&&asset){imgEl.src='images/popup/'+asset;imgEl.style.display='block';textEl.textContent='';}
+  else{imgEl.style.display='none';textEl.textContent=text;}
+  document.getElementById('popup-overlay').classList.add('show');
+}
+function closePopup(){
+  document.getElementById('popup-overlay').classList.remove('show');
+  document.getElementById('next-btn').classList.remove('hidden');
+  if(popupNext){const n=popupNext;popupNext=null;runEv(n);}
+}
+
+function showChar(slot,spId,expr){
+  if(!slot||!spId)return;
+  charState[slot]=spId;
+  const slotEl=document.getElementById('slot-'+slot);
+  const imgEl=document.getElementById('img-'+slot);
+  const svgEl=document.getElementById('svg-'+slot);
+  const nameEl=document.getElementById('name-'+slot);
+  slotEl.classList.add('vis');
+  nameEl.textContent=SPEAKERS[spId]||spId;
+  const src = getCharImg(spId, expr || 'default');
+  const img = new Image();
+  img.onload = () => {
+    imgEl.src = src;
+    imgEl.style.display = 'block';
+    svgEl.style.display = 'none';
+  };
+  img.onerror = () => {
+    // 표정 이미지 없으면 default 시도
+    if (expr && expr !== 'default') {
+      const defaultSrc = getCharImg(spId, 'default');
+      if (defaultSrc) {
+        const img2 = new Image();
+        img2.onload = () => { imgEl.src = defaultSrc; imgEl.style.display = 'block'; svgEl.style.display = 'none'; };
+        img2.onerror = () => { imgEl.style.display = 'none'; svgEl.style.display = 'flex'; svgEl.innerHTML = SILS[CHAR_SIL[spId]||'default'] || SILS.default; };
+        img2.src = defaultSrc;
+        return;
+      }
+    }
+    // default도 없으면 실루엣
+    imgEl.style.display = 'none';
+    svgEl.style.display = 'flex';
+    svgEl.innerHTML = SILS[CHAR_SIL[spId]||'default'] || SILS.default;
+  };
+  if (src) img.src = src;
+  else { imgEl.style.display='none'; svgEl.style.display='flex'; svgEl.innerHTML=SILS[CHAR_SIL[spId]||'default']||SILS.default; }
+}
+function hideChar(slot){
+  if(!slot)return;charState[slot]=null;
+  const el=document.getElementById('slot-'+slot);
+  if(el)el.classList.remove('vis','act');
+}
+function setActive(slot){
+  ['left','center','right'].forEach(s=>document.getElementById('slot-'+s).classList.remove('act'));
+  if(slot)document.getElementById('slot-'+slot).classList.add('act');
+}
+function getSlot(spId){
+  for(const[slot,id] of Object.entries(charState))if(id===spId)return slot;
+  return null;
+}
+
+function showEnding(){
+  const total=Object.values(S).reduce((a,b)=>a+b,0);
+  document.getElementById('ending-desc').innerHTML=total>=15
+    ?'당신의 선택은 빛났습니다.<br>이 무대는 당신을 기다리고 있었는지 모릅니다.'
+    :'당신의 이야기는 이제 막 시작되었습니다.<br>무대 위의 조명이 당신을 기다리고 있습니다.';
+  ['effort','skill','fame','broadcast'].forEach(k=>document.getElementById('e-'+k).textContent=S[k]);
+  document.getElementById('ending-screen').classList.add('show');
+}
+
+function startGame(){
+  document.getElementById('title-screen').classList.add('out');
+  setTimeout(()=>{document.getElementById('title-screen').style.display='none';loadScene('S01');},800);
+}
+function restartGame(){
+  S.effort=2;S.skill=2;S.fame=1;S.broadcast=2;refreshHUD();
+  ['left','center','right'].forEach(hideChar);
+  document.getElementById('ending-screen').classList.remove('show');
+  const t=document.getElementById('title-screen');
+  t.style.display='flex';t.style.opacity='1';t.classList.remove('out');
+}
+
+document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Enter'){e.preventDefault();advance();}});
+function resize(){const scale=Math.min(window.innerWidth/1280,window.innerHeight/720);document.getElementById('game').style.transform=`translate(-50%,-50%) scale(${scale})`;}
+window.addEventListener('resize',resize);resize();
+</script>
+</body>
+</html>
