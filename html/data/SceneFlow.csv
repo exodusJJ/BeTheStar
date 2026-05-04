@@ -1,0 +1,15 @@
+scene_id,scene_no,title,script_group,has_choice,has_death,condition_stat,condition_val,next_scene_default,next_scene_pass,next_scene_fail,next_scene_death,checkpoint
+S01_Dormitory,1,훈련동 입소,SCR_S01_Dormitory,FALSE,FALSE,,,,S02_FirstMeet,,,CP1
+S02_FirstMeet,2,첫 만남,SCR_S02_FirstMeet,FALSE,FALSE,,,,S03_Interview,,,
+S03_Interview,3,블라인드 인터뷰,SCR_S03_Interview,TRUE,FALSE,,,,,,, CP2
+S04_Announcement,4,1차 경연 공지,SCR_S04_Announcement,FALSE,FALSE,,,,S05_Relation,,,
+S05_Relation,5,관계 이벤트,SCR_S05_Relation,TRUE,FALSE,,,,S06_Practice,S06_Practice,,CP3
+S06_Practice,6,연습 페이즈,SCR_S06_Practice,TRUE,TRUE,,,,S07_PrepChoice,,,DEATH_Injury
+S07_PrepChoice,7,경연 준비 선택,SCR_S07_PrepChoice,TRUE,FALSE,,,,S08_Performance,,,
+S08_Performance,8,1차 경연,SCR_S08_Performance,TRUE,TRUE,skill,5,S09_Reveal,S09_Reveal,S10_Result,DEATH_Elimination
+S09_Reveal,9,1등 공개,SCR_S09_Reveal,FALSE,FALSE,,,,S10_Result,,,
+S10_Result,10,생존/탈락 발표,SCR_S10_Result,FALSE,FALSE,,,, S11_Reaction,,,
+S11_Reaction,11,결과 후 반응,SCR_S11_Reaction,TRUE,FALSE,,,,S12_Ending,,,
+S12_Ending,12,엔딩 분기,SCR_S12_Ending,TRUE,TRUE,,,,,,,
+DEATH_Injury,,,SCR_DEATH_Injury,FALSE,TRUE,,,,,,, 
+DEATH_Elimination,,,SCR_DEATH_Elimination,FALSE,TRUE,,,,,,,

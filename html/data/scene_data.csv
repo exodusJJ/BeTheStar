@@ -1,0 +1,4 @@
+﻿scene_id,title,bg_image,first_event,next_scene
+S01,합숙소 입소,bg/bg_lobby.png,10100,S02
+S02,첫 만남,bg/bg_corridor.png,20100,S03
+S03,블라인드 인터뷰,bg/bg_interview.png,30100,

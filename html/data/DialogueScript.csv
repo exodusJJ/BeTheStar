@@ -1,0 +1,42 @@
+script_group,line_index,type,speaker_id,text_kr,choice_key,effect_stat,effect_val,next_scene,next_script_group,char_slot
+SCR_S01_Dormitory,1,narr,,"거대한 K-POP 통합 연수원 입구. 보안 검색대와 스태프들이 보인다.",,,,,,
+SCR_S01_Dormitory,2,line,player,"와... 진짜 왔다. TV에서만 보던 그 로고... 대박, 나 진짜 여기 있는 거 맞아?",,,,,,center
+SCR_S01_Dormitory,3,line,player,"근데 분위기 왜 이래? 무슨 공항 검색대도 아니고... 다들 표정이 왜 저렇게 무서워?",,,,,,center
+SCR_S01_Dormitory,4,line,staff,"자, 줄 맞추세요. 핸드폰 태블릿 전부 반납입니다. 지금 이 순간부터 외부 연락은 금지예요.",,,,,,left
+SCR_S01_Dormitory,5,narr,,"떨리는 손으로 핸드폰을 바구니에 내려놓는다.",,,,,,
+SCR_S01_Dormitory,6,line,player,"헐 내 핸드폰... 이제 진짜 세상이랑 단절되는 건가? 갑자기 심장이 막 뛰기 시작한다.",,,,,,center
+SCR_S01_Dormitory,7,line,staff,"32번. 본인 확인됐습니다. 이름표 가슴에 잘 보이게 붙이세요. 잃어버리면 안 됩니다.",,,,,,left
+SCR_S01_Dormitory,8,narr,,"번호표를 만져본다. [No. 32]",,,,,,
+SCR_S01_Dormitory,9,line,player,"32번... 이제 이름 대신 이 번호로 불리는 건가? 진짜 시작이구나. 떨리기도 하고 무섭기도 하고... 나 잘할 수 있겠지?",,,,,,center
+SCR_S02_FirstMeet,1,narr,,"숙소로 향하는 긴 복도. 사방이 거울로 된 벽면.",,,,,,
+SCR_S02_FirstMeet,2,line,player,"복도 왤케 길어... 그리고 다들 눈빛들이 장난 아니다. 꼭 잡아먹을 것처럼 쳐다보는 것 같아.",,,,,,center
+SCR_S02_FirstMeet,3,narr,,"걷다가 코너에서 누군가와 어깨를 세게 부딪힌다.",,,,,,
+SCR_S02_FirstMeet,4,line,player,"앗 죄송합니...!",,,,,,center
+SCR_S02_FirstMeet,5,narr,,"바닥에 떨어진 ID카드를 굽이 높은 워커가 밟는다. 고개를 들면 날카로운 눈매의 윤세한(No. 15)이 서 있다.",,,,,,
+SCR_S02_FirstMeet,6,line,sehan,"앞 좀 제대로 보고 다니지? 시작도 하기 전에 발목 나가서 짐 싸고 싶은 게 아니라면.",,,,,,left
+SCR_S02_FirstMeet,7,line,player,"아 그게... 제가 방 번호를 찾느라...",,,,,,center
+SCR_S02_FirstMeet,8,line,sehan,"변명은 무대 위에서나 해. 네 실력이 그만큼 처절하다면 말이야.",,,,,,left
+SCR_S02_FirstMeet,9,narr,,"세한은 ID카드를 발끝으로 툭 밀어버리고 지나쳐 간다.",,,,,,
+SCR_S02_FirstMeet,10,line,player,"와... 뭐야? 방금 그 사람? 인상 진짜 무섭네... 사과 한마디도 안 하고 그냥 가버리네. 재수 없어 진짜!",,,,,,center
+SCR_S02_FirstMeet,11,narr,,"카드를 집어 드는데 옆에서 누군가 넉살 좋게 말을 걸어온다.",,,,,,
+SCR_S02_FirstMeet,12,line,minu,"우와 진짜 까칠하네. 저 사람 성격 장난 아니기로 유명하거든요. 32번님 괜찮아요? 어디 뼈라도 부러진 거 아니죠?",,,,,,right
+SCR_S02_FirstMeet,13,line,player,"아 네... 괜찮아요. 근데... 저분을 아세요?",,,,,,center
+SCR_S02_FirstMeet,14,line,minu,"당연하죠! 15번 윤세한. 대형 기획사에서 데뷔 직전까지 갔다가 팀이 엎어졌다더라고요. 실력은 진짜 미쳤는데 독기만 남았다는 소문이 자자해요. 아 제 소개가 늦었네요. 전 8번 강민우! 이 바닥 소식은 제 귀를 다 거치거든요. 우리 친하게 지내요 32번님!",,,,,,right
+SCR_S02_FirstMeet,15,narr,,"민우가 웃으며 멀어진다.",,,,,,
+SCR_S02_FirstMeet,16,line,player,"오 이 사람은 친절하네... 그나저나 윤세한? 실력이 그렇게 좋나? 나도 모르게 긴장되네...",,,,,,center
+SCR_S02_FirstMeet,17,narr,,"다시 발을 떼려는데 복도 기둥 뒤에서 지켜보던 이하준(No. 92)과 눈이 마주친다.",,,,,,
+SCR_S02_FirstMeet,18,line,player,"어... 안녕? 너도 혹시 방 찾는 거야?",,,,,,center
+SCR_S02_FirstMeet,19,narr,,"하준이 소스라치게 놀라며 고개를 푹 숙인다.",,,,,,
+SCR_S02_FirstMeet,20,line,hajun,"아... 아뇨 저... 죄송합니다...!",,,,,,right
+SCR_S02_FirstMeet,21,narr,,"하준은 대답이 끝나기도 전에 반대편 복도로 후다닥 달아나 버린다.",,,,,,
+SCR_S02_FirstMeet,22,line,player,"엥? 저 친구는 또 뭐야? 내가 그렇게 무섭게 생겼나? 여긴 진짜 특이한 애들 천지네...",,,,,,center
+SCR_S03_Interview,1,narr,,"암전된 작은 방. 정면에 눈부신 핀 조명.",,,,,,
+SCR_S03_Interview,2,line,player,"아 이 방 왜 이렇게 깜깜해... 조명 때문에 앞도 하나도 안 보이고. 완전 취조실 같은데?",,,,,,center
+SCR_S03_Interview,3,line,pd,"자 32번 연습생. 자리에 앉으세요. 여긴 익명 인터뷰 방입니다. 목소리는 변조되어 나갈 테니까 솔직하게 말해도 돼요.",,,,,,left
+SCR_S03_Interview,4,narr,,"마른침을 삼킨다. 렌즈가 나를 빤히 노려보는 것 같다.",,,,,,
+SCR_S03_Interview,5,line,pd,"100명의 연습생이 모였습니다. 누군가는 동료겠지만 결국은 다 경쟁자예요. 당신은 여기서 어떤 '캐릭터'로 살아남을 생각입니까?",,,,,,left
+SCR_S03_Interview,6,choice,,"어떻게 대답할까?",,,,,,
+SCR_S03_Interview,6,choice_item,,"실력으로 다 찍어 누를 겁니다.",A,skill,3,,
+SCR_S03_Interview,6,choice_item,,"누구보다 간절하게 성장하는 걸 보여줄게요.",B,effort,3,,
+SCR_S03_Interview,6,choice_item,,"판을 흔드는 사람이 되고 싶어요.",C,broadcast,3,,
+SCR_S03_Interview,7,line,player,"와... 진짜 시작인가 봐. 내 대답 한마디에 내 인생이 바뀔 수도 있는 거잖아. 좋아 가보는 거야!",,,,,,center
