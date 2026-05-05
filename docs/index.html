@@ -75,7 +75,7 @@ html,body{width:100%;height:100%;background:#f0d8e8;overflow:hidden;font-family:
 #t-logo{position:absolute;inset:0;background:url('title_logo.png') center/contain no-repeat;background-position:center 45%;opacity:0;transition:opacity 1.2s ease;z-index:3;}
 #t-logo.show{opacity:1;}
 #t-canvas{position:absolute;inset:0;pointer-events:none;z-index:4;}
-#t-sub{position:absolute;top:72px;left:50%;transform:translateX(-50%) translateY(-10px);font-family:'Noto Sans KR';font-size:21px;color:rgba(100,70,140,0.85);letter-spacing:8px;white-space:nowrap;z-index:5;opacity:0;transition:opacity 0.8s ease,transform 0.8s ease;}
+#t-sub{position:absolute;top:72px;left:50%;transform:translateX(-50%) translateY(-10px);font-family:'Noto Sans KR';font-size:14.7px;color:rgba(255,255,255,0.9);letter-spacing:8px;white-space:nowrap;z-index:5;opacity:0;transition:opacity 0.8s ease,transform 0.8s ease;}
 #t-sub.show{opacity:1;transform:translateX(-50%) translateY(0);}
 #t-touch{position:absolute;bottom:22%;left:50%;transform:translateX(-50%);font-size:18px;color:rgba(160,120,200,0.7);letter-spacing:4px;z-index:5;opacity:0;transition:opacity 0.6s ease;pointer-events:none;white-space:nowrap;}
 #t-touch.show{opacity:1;animation:touchBlink 2s ease-in-out infinite;}
@@ -106,7 +106,7 @@ html,body{width:100%;height:100%;background:#f0d8e8;overflow:hidden;font-family:
 <body>
 <div id="game">
   <!-- 로딩 -->
-  <div id="loading-screen">
+  <div id="loading-screen" style="display:none">
     <div id="loading-text">LOADING...</div>
     <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
   </div>
@@ -213,21 +213,194 @@ async function loadCSV() {
     { url:'data/speaker_data.csv', key:'speakers', idKey:'id' },
   ];
 
+  let loadedAny = false;
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
     try {
       const res = await fetch(f.url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
       const rows = parseCSV(text);
       rows.forEach(r => { DB[f.key][r[f.idKey]] = r; });
-      console.log(`[BTS] ${f.key} 로드: ${rows.length}건`);
+      console.log('[BTS]', f.key, '로드:', rows.length+'건');
+      loadedAny = true;
     } catch(e) {
-      console.warn(`[BTS] ${f.url} 로드 실패:`, e.message);
+      console.warn('[BTS]', f.url, '로드 실패 — 내장 데이터 사용:', e.message);
     }
     bar.style.width = ((i+1) / files.length * 100) + '%';
   }
 
-  console.log('[BTS] 전체 로드 완료');
+  // CSV 로드 실패 시 내장 데이터 사용
+  if (!loadedAny || Object.keys(DB.scenes).length === 0) {
+    console.log('[BTS] 내장 데이터로 폴백');
+    loadBuiltinData();
+  }
+
+  console.log('[BTS] 준비 완료 — scenes:', Object.keys(DB.scenes).length, 'events:', Object.keys(DB.events).length);
+}
+
+// ══ 내장 데이터 폴백 ══
+function loadBuiltinData() {
+  // speaker_data
+  [
+    {id:'PLAYER', NameString_kr:'나 (No.32)'},
+    {id:'STAFF',  NameString_kr:'스태프'},
+    {id:'SEOA',   NameString_kr:'윤서아 (No.15)'},
+    {id:'HARIN',  NameString_kr:'강하린 (No.8)'},
+    {id:'YUNA',   NameString_kr:'이유나 (No.92)'},
+    {id:'JIAN',   NameString_kr:'지안'},
+    {id:'PD',     NameString_kr:'김PD'},
+  ].forEach(r => { DB.speakers[r.id] = r; });
+
+  // scene_data
+  [
+    {scene_id:'S01', title:'합숙소 입소',    bg_image:'bg/bg_lobby.png',     first_event:'10100', next_scene:'S02'},
+    {scene_id:'S02', title:'첫 만남',        bg_image:'bg/bg_corridor.png',  first_event:'20100', next_scene:'S03'},
+    {scene_id:'S03', title:'블라인드 인터뷰', bg_image:'bg/bg_interview.png', first_event:'30100', next_scene:''},
+  ].forEach(r => { DB.scenes[r.scene_id] = r; });
+
+  // text_data
+  const texts = [
+    {id:'T10200', Kr:'와... 진짜 왔다. TV에서만 보던 그 로고... 나 진짜 여기 있는 거 맞아?'},
+    {id:'T10300', Kr:'나 진짜 여기 왔구나...'},
+    {id:'T10400', Kr:'근데 저 사람들. 다 경험한 사람들인가? 분위기가 왜 무서워...'},
+    {id:'T10500', Kr:'32번 연습생. 이쪽으로 오세요.'},
+    {id:'T10600', Kr:'핸드폰이랑 외부 통신기기는 전부 반납하셔야 합니다. 규정 아시죠?'},
+    {id:'T10700', Kr:'(떨리는 손으로 핸드폰을 꺼낸다)'},
+    {id:'T10800', Kr:'어떻게 할까?'},
+    {id:'T10801', Kr:'잠깐 망설인다'},
+    {id:'T10802', Kr:'바로 내려놓는다'},
+    {id:'T10803', Kr:'마지막으로 화면을 본다'},
+    {id:'T10811', Kr:'(잠깐 망설이다 핸드폰을 바구니에 내려놓는다)'},
+    {id:'T10821', Kr:'(핸드폰을 바구니에 바로 내려놓는다)'},
+    {id:'T10831', Kr:'(엄마한테 문자가 와 있다.)'},
+    {id:'T10832', Kr:'(떨리는 손으로 핸드폰을 바구니에 내려놓는다)'},
+    {id:'T10900', Kr:'아... 내 핸드폰. 이제 진짜 바깥세상이랑은 안녕이네.'},
+    {id:'T11000', Kr:'갑자기 심장이 막 요동치기 시작했다.'},
+    {id:'T11100', Kr:'32번. 오늘부터는 이름 대신 이 번호로 불릴 거예요.'},
+    {id:'T11200', Kr:'잃어버린 숙소 출입도 안 되니까 목에 꼭 걸고 다니세요.'},
+    {id:'T11300', Kr:'(ID 카드를 건넨다)'},
+    {id:'T11400', Kr:'[No.32 ID 카드 획득]'},
+    {id:'T11600', Kr:'32번... 이게 이곳에서의 내 새 이름인가?'},
+    {id:'T11800', Kr:'그래도 나. 여기까지 오느라 고생 많았잖아.'},
+    {id:'T11900', Kr:'기죽지 말자!'},
+    {id:'T20200', Kr:'숙소로 향하는 긴 복도.'},
+    {id:'T20300', Kr:'복도 왤케 길어... 다들 눈빛들이 장난 아니다.'},
+    {id:'T20400', Kr:'꼭 잡아먹을 것처럼 쳐다보는 것 같아.'},
+    {id:'T20600', Kr:'앗 죄송합니...!'},
+    {id:'T20700', Kr:'바닥에 떨어진 ID카드를 하이힐이 밟는다. 날카로운 눈매의 윤서아(No.15)가 서 있다.'},
+    {id:'T20800', Kr:'앞 좀 제대로 보고 다니지? 시작도 하기 전에 발목 나가서 짐 싸고 싶은 게 아니라면.'},
+    {id:'T20900', Kr:'아 그게... 제가 방 번호를 찾느라...'},
+    {id:'T21000', Kr:'변명은 무대 위에서나 해. 네 실력이 그만큼 처절하다면 말이야.'},
+    {id:'T21200', Kr:'바닥에 떨어진 ID카드. 차갑게 빛난다.'},
+    {id:'T21300', Kr:'와... 재수 없어 진짜.'},
+    {id:'T21400', Kr:'우와 진짜 까칠하네. 저 언니 성격 장난 아니기로 유명하거든요. 32번님 괜찮아요?'},
+    {id:'T21500', Kr:'아 네... 괜찮아요. 근데... 저분을 아세요?'},
+    {id:'T21600', Kr:'당연하죠! 15번 윤서아. 실력은 진짜 미쳤는데 독기만 남았다는 소문이 자자해요.'},
+    {id:'T21700', Kr:'아 제 소개가 늦었네요. 전 8번 강하린! 우리 친하게 지내요 32번님!'},
+    {id:'T21900', Kr:'오 이 언니는 친절하네... 나도 모르게 긴장되네...'},
+    {id:'T22000', Kr:'복도 기둥 뒤에서 이유나(No.92)와 눈이 마주친다.'},
+    {id:'T22100', Kr:'어... 안녕? 너도 혹시 방 찾는 거야?'},
+    {id:'T22200', Kr:'유나가 소스라치게 놀라며 고개를 푹 숙인다.'},
+    {id:'T22300', Kr:'아... 아뇨 저... 죄송합니다...!'},
+    {id:'T22500', Kr:'엥? 저 애는 또 뭐야? 여긴 진짜 특이한 애들 천지네...'},
+    {id:'T30200', Kr:'암전된 작은 방. 정면에 눈부신 핀 조명.'},
+    {id:'T30300', Kr:'아 이 방 왜 이렇게 깜깜해... 완전 취조실 같은데?'},
+    {id:'T30400', Kr:'조명 때문에 앞도 하나도 안 보이고.'},
+    {id:'T30500', Kr:'자 32번 연습생. 자리에 앉으세요. 여긴 익명 인터뷰 방입니다. 솔직하게 말해도 돼요.'},
+    {id:'T30600', Kr:'(마른침을 삼킨다)'},
+    {id:'T30700', Kr:"100명의 연습생이 모였습니다. 결국은 다 경쟁자예요. 당신은 여기서 어떤 '캐릭터'로 살아남을 생각입니까?"},
+    {id:'T30800', Kr:'어떻게 대답할까?'},
+    {id:'T30801', Kr:'실력으로 다 찍어 누를 겁니다.'},
+    {id:'T30802', Kr:'누구보다 간절하게 성장하는 걸 보여줄게요.'},
+    {id:'T30803', Kr:'판을 흔드는 사람이 되고 싶어요.'},
+    {id:'T30811', Kr:'실력으로 다 찍어 누를 겁니다. 무대 끝나면 다들 제 번호만 검색하게 만들 자신 있으니까요.'},
+    {id:'T30812', Kr:'...자신감은 있군요.'},
+    {id:'T30821', Kr:'남들보다 늦게 시작했을지 몰라도 끝까지 남는 건 저일 거예요. 매일 어제보다 나은 저를 증명하겠습니다.'},
+    {id:'T30822', Kr:'진심이 느껴지네요. 두고 봐야겠지만.'},
+    {id:'T30831', Kr:'단순히 춤만 잘 추는 건 재미없잖아요. 방송이 뭘 원하는지 시청자가 뭘 보고 싶어 하는지 전 알고 있거든요.'},
+    {id:'T30832', Kr:'흥미롭네요. 생각보다 영리한 친구군요.'},
+    {id:'T30900', Kr:'와... 진짜 시작인가 봐.'},
+    {id:'T31000', Kr:'좋아. 가보는 거야!'},
+  ];
+  texts.forEach(r => { DB.texts[r.id] = r; });
+
+  // event_data
+  [
+    {event_id:"10100",scene_id:"S01",type:"bgm",next_event:"10200",bgm:"bgm_intro"},
+    {event_id:"10200",scene_id:"S01",type:"narration",next_event:"10300",speakerId:"PLAYER",char_slot:"center",char_slot_move:"start",expression:"surprised",textId:"T10200"},
+    {event_id:"10300",scene_id:"S01",type:"narration",next_event:"10400",speakerId:"PLAYER",char_slot:"center",char_slot_move:"start",expression:"surprised",textId:"T10300"},
+    {event_id:"10400",scene_id:"S01",type:"narration",next_event:"10500",speakerId:"PLAYER",expression:"nervous",textId:"T10400"},
+    {event_id:"10500",scene_id:"S01",type:"dialogue",next_event:"10600",speakerId:"STAFF",char_slot:"right",char_slot_move:"start",expression:"default",textId:"T10500"},
+    {event_id:"10600",scene_id:"S01",type:"dialogue",next_event:"10700",speakerId:"STAFF",textId:"T10600"},
+    {event_id:"10700",scene_id:"S01",type:"narration",next_event:"10800",textId:"T10700"},
+    {event_id:"10800",scene_id:"S01",type:"choice",choice_id:"C001",textId:"T10800"},
+    {event_id:"10801",scene_id:"S01",type:"choice_option",choice_id:"C001",next_event:"10811",textId:"T10801",stats:"personality=hesitant"},
+    {event_id:"10802",scene_id:"S01",type:"choice_option",choice_id:"C001",next_event:"10821",textId:"T10802",stats:"personality=decisive"},
+    {event_id:"10803",scene_id:"S01",type:"choice_option",choice_id:"C001",next_event:"10831",textId:"T10803",stats:"personality=emotional"},
+    {event_id:"10811",scene_id:"S01",type:"narration",next_event:"10900",textId:"T10811"},
+    {event_id:"10821",scene_id:"S01",type:"narration",next_event:"10900",textId:"T10821"},
+    {event_id:"10831",scene_id:"S01",type:"narration",next_event:"10832",textId:"T10831"},
+    {event_id:"10832",scene_id:"S01",type:"narration",next_event:"10900",textId:"T10832"},
+    {event_id:"10900",scene_id:"S01",type:"narration",next_event:"11000",speakerId:"PLAYER",textId:"T10900"},
+    {event_id:"11000",scene_id:"S01",type:"narration",next_event:"11100",speakerId:"PLAYER",textId:"T11000"},
+    {event_id:"11100",scene_id:"S01",type:"dialogue",next_event:"11200",speakerId:"STAFF",textId:"T11100"},
+    {event_id:"11200",scene_id:"S01",type:"dialogue",next_event:"11300",speakerId:"STAFF",textId:"T11200"},
+    {event_id:"11300",scene_id:"S01",type:"narration",next_event:"11400",textId:"T11300"},
+    {event_id:"11400",scene_id:"S01",type:"system",next_event:"11500",textId:"T11400"},
+    {event_id:"11500",scene_id:"S01",type:"popup",next_event:"11600",type_control:"open",popup_type:"image",popup_asset:"popup_letter"},
+    {event_id:"11600",scene_id:"S01",type:"narration",next_event:"11700",speakerId:"PLAYER",textId:"T11600"},
+    {event_id:"11700",scene_id:"S01",type:"popup",next_event:"11800",type_control:"close"},
+    {event_id:"11800",scene_id:"S01",type:"narration",next_event:"11900",speakerId:"PLAYER",textId:"T11800"},
+    {event_id:"11900",scene_id:"S01",type:"narration",next_event:"12000",speakerId:"PLAYER",expression:"determined",textId:"T11900"},
+    {event_id:"12000",scene_id:"S01",type:"checkpoint",next_event:"20100"},
+    {event_id:"20100",scene_id:"S02",type:"bgm",next_event:"20200",bgm:"bgm_corridor"},
+    {event_id:"20200",scene_id:"S02",type:"narration",next_event:"20300",textId:"T20200"},
+    {event_id:"20300",scene_id:"S02",type:"narration",next_event:"20400",speakerId:"PLAYER",char_slot:"center",char_slot_move:"start",expression:"neutral",textId:"T20300"},
+    {event_id:"20400",scene_id:"S02",type:"narration",next_event:"20500",speakerId:"PLAYER",textId:"T20400"},
+    {event_id:"20500",scene_id:"S02",type:"effect",next_event:"20600",type_control:"shake",sfx:"sfx_bump"},
+    {event_id:"20600",scene_id:"S02",type:"narration",next_event:"20700",speakerId:"PLAYER",char_slot:"left",char_slot_move:"end",expression:"surprised",textId:"T20600"},
+    {event_id:"20700",scene_id:"S02",type:"narration",next_event:"20800",textId:"T20700"},
+    {event_id:"20800",scene_id:"S02",type:"dialogue",next_event:"20900",speakerId:"SEOA",char_slot:"right",char_slot_move:"start",expression:"cold",textId:"T20800"},
+    {event_id:"20900",scene_id:"S02",type:"dialogue",next_event:"21000",speakerId:"PLAYER",char_slot:"center",char_slot_move:"start",expression:"nervous",textId:"T20900"},
+    {event_id:"21000",scene_id:"S02",type:"dialogue",next_event:"21100",speakerId:"SEOA",expression:"cold",textId:"T21000"},
+    {event_id:"21100",scene_id:"S02",type:"char_exit",next_event:"21200",speakerId:"SEOA",char_slot:"right",char_slot_move:"end",sfx:"sfx_heels"},
+    {event_id:"21200",scene_id:"S02",type:"narration",next_event:"21300",textId:"T21200"},
+    {event_id:"21300",scene_id:"S02",type:"narration",next_event:"21400",speakerId:"PLAYER",expression:"angry",textId:"T21300"},
+    {event_id:"21400",scene_id:"S02",type:"dialogue",next_event:"21500",speakerId:"HARIN",char_slot:"right",char_slot_move:"start",expression:"happy",textId:"T21400"},
+    {event_id:"21500",scene_id:"S02",type:"dialogue",next_event:"21600",speakerId:"PLAYER",expression:"default",textId:"T21500"},
+    {event_id:"21600",scene_id:"S02",type:"dialogue",next_event:"21700",speakerId:"HARIN",expression:"happy",textId:"T21600"},
+    {event_id:"21700",scene_id:"S02",type:"dialogue",next_event:"21800",speakerId:"HARIN",expression:"happy",textId:"T21700"},
+    {event_id:"21800",scene_id:"S02",type:"char_exit",next_event:"21900",speakerId:"HARIN",char_slot:"right",char_slot_move:"end"},
+    {event_id:"21900",scene_id:"S02",type:"narration",next_event:"22000",speakerId:"PLAYER",char_slot:"center",char_slot_move:"start",expression:"default",textId:"T21900"},
+    {event_id:"22000",scene_id:"S02",type:"narration",next_event:"22100",textId:"T22000"},
+    {event_id:"22100",scene_id:"S02",type:"dialogue",next_event:"22200",speakerId:"PLAYER",expression:"default",textId:"T22100"},
+    {event_id:"22200",scene_id:"S02",type:"narration",next_event:"22300",speakerId:"YUNA",char_slot:"right",char_slot_move:"start",expression:"nervous",textId:"T22200"},
+    {event_id:"22300",scene_id:"S02",type:"dialogue",next_event:"22400",speakerId:"YUNA",expression:"nervous",textId:"T22300"},
+    {event_id:"22400",scene_id:"S02",type:"char_exit",next_event:"22500",speakerId:"YUNA",char_slot:"right",char_slot_move:"end",sfx:"sfx_run"},
+    {event_id:"22500",scene_id:"S02",type:"dialogue",next_event:"22600",speakerId:"PLAYER",expression:"confused",textId:"T22500"},
+    {event_id:"22600",scene_id:"S02",type:"checkpoint",next_event:"30100"},
+    {event_id:"30100",scene_id:"S03",type:"bgm",next_event:"30200",bgm:"bgm_tense"},
+    {event_id:"30200",scene_id:"S03",type:"narration",next_event:"30300",textId:"T30200"},
+    {event_id:"30300",scene_id:"S03",type:"narration",next_event:"30400",speakerId:"PLAYER",char_slot:"center",char_slot_move:"start",expression:"nervous",textId:"T30300"},
+    {event_id:"30400",scene_id:"S03",type:"narration",next_event:"30500",speakerId:"PLAYER",textId:"T30400"},
+    {event_id:"30500",scene_id:"S03",type:"dialogue",next_event:"30600",speakerId:"PD",char_slot:"left",char_slot_move:"start",expression:"default",textId:"T30500"},
+    {event_id:"30600",scene_id:"S03",type:"narration",next_event:"30700",speakerId:"PLAYER",textId:"T30600",sfx:"sfx_swallow"},
+    {event_id:"30700",scene_id:"S03",type:"dialogue",next_event:"30800",speakerId:"PD",expression:"default",textId:"T30700"},
+    {event_id:"30800",scene_id:"S03",type:"choice",choice_id:"C002",textId:"T30800"},
+    {event_id:"30801",scene_id:"S03",type:"choice_option",choice_id:"C002",next_event:"30811",textId:"T30801",stats:"skill+3"},
+    {event_id:"30802",scene_id:"S03",type:"choice_option",choice_id:"C002",next_event:"30821",textId:"T30802",stats:"effort+3"},
+    {event_id:"30803",scene_id:"S03",type:"choice_option",choice_id:"C002",next_event:"30831",textId:"T30803",stats:"broadcast+3"},
+    {event_id:"30811",scene_id:"S03",type:"dialogue",next_event:"30812",speakerId:"PLAYER",expression:"determined",textId:"T30811"},
+    {event_id:"30812",scene_id:"S03",type:"dialogue",next_event:"30900",speakerId:"PD",expression:"default",textId:"T30812"},
+    {event_id:"30821",scene_id:"S03",type:"dialogue",next_event:"30822",speakerId:"PLAYER",textId:"T30821"},
+    {event_id:"30822",scene_id:"S03",type:"dialogue",next_event:"30900",speakerId:"PD",expression:"default",textId:"T30822"},
+    {event_id:"30831",scene_id:"S03",type:"dialogue",next_event:"30832",speakerId:"PLAYER",expression:"determined",textId:"T30831"},
+    {event_id:"30832",scene_id:"S03",type:"dialogue",next_event:"30900",speakerId:"PD",expression:"smile",textId:"T30832"},
+    {event_id:"30900",scene_id:"S03",type:"narration",next_event:"31000",speakerId:"PLAYER",textId:"T30900"},
+    {event_id:"31000",scene_id:"S03",type:"dialogue",next_event:"31100",speakerId:"PLAYER",expression:"determined",textId:"T31000"},
+    {event_id:"31100",scene_id:"S03",type:"scene_end"}
+  ].forEach(r => { DB.events[r.event_id] = r; });
 }
 
 // ══ 파티클 ══
@@ -588,13 +761,18 @@ function titleClick() {
 // ══ 시작/재시작 ══
 async function startGame() {
   document.getElementById('title-screen').classList.add('out');
+  // 로딩 화면 표시
+  const loadingEl = document.getElementById('loading-screen');
+  loadingEl.style.display = 'flex';
+
   // 데이터 로드
   await loadCSV();
-  document.getElementById('loading-screen').classList.add('hide');
+  loadingEl.style.display = 'none';
+
   // 첫 씬 시작
   const firstScene = Object.keys(DB.scenes)[0];
   if(firstScene) loadScene(firstScene);
-  else console.error('[BTS] scene_data 없음');
+  else console.error('[BTS] scene_data 없음. data/ 폴더에 CSV 파일을 확인하세요.');
 }
 
 function restartGame() {
